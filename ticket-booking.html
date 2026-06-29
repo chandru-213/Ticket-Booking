@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransitGo — Bus & Train Tickets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --night:#0D1B2A;--deep:#1A2F45;--teal:#00C9A7;--teal2:#00A389;
+  --sand:#F5E6C8;--sand2:#E8D5A3;--cloud:#F0F4F8;--mist:#E2E8F0;
+  --fog:#94A3B8;--ink:#1E293B;--white:#FFFFFF;--green:#10B981;--red:#EF4444;
+  --rail:repeating-linear-gradient(90deg,transparent,transparent 8px,rgba(0,201,167,.07) 8px,rgba(0,201,167,.07) 9px)
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--cloud);color:var(--ink);min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+nav{background:var(--night);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:1000;border-bottom:1px solid rgba(0,201,167,.15)}
+.logo{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.logo-mark{width:28px;height:28px;background:var(--teal);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.logo span{color:var(--teal)}
+.nav-r{display:flex;align-items:center;gap:14px}
+.navbtn{background:none;border:none;font-family:'Inter',sans-serif;font-size:.875rem;font-weight:500;color:rgba(255,255,255,.6);cursor:pointer;transition:color .2s;padding:0}
+.navbtn:hover,.navbtn.on{color:#fff}
+.navbtn.on{color:var(--teal)}
+.pill{background:var(--teal);color:var(--night);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.875rem;padding:8px 18px;border-radius:100px;border:none;cursor:pointer;transition:all .2s}
+.pill:hover{background:var(--teal2)}
+
+/* HERO */
+.hero{background:var(--night);background-image:var(--rail);padding:56px 24px 0;overflow:hidden}
+.hero-in{max-width:820px;margin:0 auto;text-align:center}
+.eyebrow{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--teal);letter-spacing:.2em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px}
+.eyebrow::before,.eyebrow::after{content:'';width:28px;height:1px;background:var(--teal);opacity:.5}
+.hero-sub{color:rgba(255,255,255,.5);font-size:.95rem;margin-bottom:40px;line-height:1.6}
+
+/* FLAP BOARD */
+.flap-board{display:inline-flex;align-items:center;gap:8px;margin-bottom:28px}
+.flap-word{display:flex;gap:3px}
+.flap-char{width:34px;height:50px;background:var(--deep);border:1px solid rgba(0,201,167,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--sand);position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+.flap-char::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.5)}
+.flap-char.flip{animation:flapFlip .1s ease-in-out}
+@keyframes flapFlip{0%{transform:rotateX(0)},50%{transform:rotateX(-80deg);opacity:.2}100%{transform:rotateX(0)}}
+.flap-sep{font-family:'Space Mono',monospace;font-size:1.8rem;color:var(--teal);line-height:1}
+
+/* SEARCH CARD */
+.search-card{background:#fff;border-radius:20px 20px 0 0;padding:26px 26px 0;box-shadow:0 -4px 40px rgba(0,0,0,.15)}
+.mode-tabs{display:flex;gap:4px;background:var(--mist);border-radius:12px;padding:4px;width:fit-content;margin-bottom:22px}
+.mtab{padding:8px 20px;border-radius:9px;border:none;background:transparent;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.88rem;color:var(--fog);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.mtab.on{background:#fff;color:var(--night);box-shadow:0 1px 8px rgba(0,0,0,.1)}
+.sf{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;padding-bottom:26px}
+@media(max-width:660px){.sf{grid-template-columns:1fr 1fr}.srch{grid-column:span 2}}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-family:'Space Mono',monospace;font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fog)}
+.fi{padding:12px 13px;border:2px solid var(--mist);border-radius:10px;font-family:'Inter',sans-serif;font-size:.93rem;color:var(--ink);background:var(--cloud);outline:none;transition:border-color .2s,background .2s;width:100%}
+.fi:focus{border-color:var(--teal);background:#fff}
+.srch{background:var(--night);color:var(--teal);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;padding:13px 26px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.srch:hover{background:var(--deep);box-shadow:0 4px 20px rgba(0,201,167,.2)}
+
+/* TRUST BAR */
+.trust{background:#fff;border-top:1px solid var(--mist);padding:15px 24px;display:flex;justify-content:center;gap:36px;flex-wrap:wrap}
+.ti{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--fog);font-weight:500}
+.ti strong{color:var(--ink)}
+
+/* MAIN */
+.main{max-width:900px;margin:0 auto;padding:30px 22px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-ttl{font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:var(--night);display:flex;align-items:center;gap:10px}
+.cbadge{background:var(--night);color:var(--teal);font-family:'Space Mono',monospace;font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:100px}
+.frow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.chip{padding:6px 14px;border-radius:100px;border:1.5px solid var(--mist);background:#fff;font-size:.78rem;font-weight:600;color:var(--fog);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.chip.on{background:var(--night);border-color:var(--night);color:var(--teal)}
+
+/* RESULT CARD */
+.rc{background:#fff;border-radius:15px;margin-bottom:11px;overflow:hidden;border:1.5px solid transparent;transition:all .2s;cursor:default}
+.rc:hover{border-color:var(--teal);box-shadow:0 4px 24px rgba(0,201,167,.12);transform:translateY(-1px)}
+.rc-top{display:grid;grid-template-columns:52px 1fr auto;gap:15px;align-items:center;padding:18px 18px 14px}
+.mico{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.mico.bus{background:#FFF7ED}.mico.train{background:#EFF6FF}
+.rc-mid{flex:1;min-width:0}
+.sname{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;color:var(--night);margin-bottom:2px}
+.stype{font-size:.76rem;color:var(--fog);margin-bottom:9px}
+.rv{display:flex;align-items:center;gap:9px}
+.ctag{font-family:'Space Mono',monospace;font-size:.78rem;font-weight:700;color:var(--night)}
+.ttag{font-family:'Space Grotesk',sans-serif;font-size:.75rem;color:var(--fog)}
+.rl{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.rt{width:100%;height:2px;background:linear-gradient(90deg,var(--teal),var(--sand2));border-radius:2px;position:relative}
+.rt::before,.rt::after{content:'';position:absolute;top:-3px;width:8px;height:8px;border-radius:50%}
+.rt::before{left:0;background:var(--teal)}
+.rt::after{right:0;background:var(--sand2)}
+.rdur{font-family:'Space Mono',monospace;font-size:.63rem;color:var(--fog);margin-top:3px}
+.rc-right{text-align:right;flex-shrink:0}
+.price{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--night);line-height:1;margin-bottom:3px}
+.price .cur{font-size:.95rem;font-weight:500}
+.plbl{font-size:.7rem;color:var(--fog);margin-bottom:9px}
+.bbtn{background:var(--teal);color:var(--night);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.85rem;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;transition:all .2s;white-space:nowrap}
+.bbtn:hover{background:var(--teal2)}
+.rc-bot{padding:9px 18px 13px;border-top:1px dashed var(--mist);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cmeta{display:flex;gap:14px;flex-wrap:wrap}
+.mi{display:flex;align-items:center;gap:4px;font-size:.77rem;color:var(--fog)}
+.mi strong{color:var(--ink);font-weight:600}
+.slbl{font-size:.73rem;font-weight:700;font-family:'Space Mono',monospace;padding:3px 10px;border-radius:100px}
+.slbl.p{background:#ECFDF5;color:#065F46}.slbl.f{background:#FFF7ED;color:#92400E}.slbl.l{background:#FFF1F2;color:#9F1239}
+
+/* EMPTY */
+.empty{text-align:center;padding:46px 20px;color:var(--fog)}
+.empty .ei{font-size:2.8rem;margin-bottom:10px}
+.empty h3{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:700;color:var(--ink);margin-bottom:7px}
+
+/* LOADING */
+.lbar{height:3px;background:var(--mist);border-radius:2px;overflow:hidden;margin-bottom:18px}
+.lbar-f{height:100%;background:linear-gradient(90deg,var(--teal),var(--sand));border-radius:2px;animation:lp .9s ease-in-out infinite;width:40%}
+@keyframes lp{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
+/* MODAL */
+.backdrop{position:fixed;inset:0;background:rgba(13,27,42,.75);z-index:2000;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
+.backdrop.open{opacity:1;pointer-events:all}
+.mpanel{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;transform:translateY(40px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.backdrop.open .mpanel{transform:translateY(0)}
+.mhandle{width:38px;height:4px;background:var(--mist);border-radius:2px;margin:11px auto 0}
+.mhdr{padding:15px 22px 0;display:flex;align-items:center;justify-content:space-between}
+.mttl{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:var(--night)}
+.mclose{width:30px;height:30px;border-radius:7px;background:var(--mist);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;color:var(--fog);transition:background .2s}
+.mclose:hover{background:var(--cloud)}
+.mbody{padding:18px 22px 30px}
+
+/* STEPS */
+.steps{display:flex;align-items:center;margin-bottom:26px}
+.sdot{width:26px;height:26px;border-radius:50%;border:2px solid var(--mist);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:.7rem;font-weight:700;color:var(--fog);transition:all .3s;flex-shrink:0}
+.sdot.on{border-color:var(--teal);color:var(--night);background:var(--teal)}
+.sdot.done{border-color:var(--green);background:var(--green);color:#fff}
+.sline{flex:1;height:2px;background:var(--mist);transition:background .3s}
+.sline.done{background:var(--green)}
+
+/* SEATS */
+.slg{font-family:'Space Mono',monospace;font-size:.63rem;color:var(--fog);letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;margin-top:3px}
+.sgrid{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.srow{display:flex;align-items:center;gap:5px}
+.srlab{font-family:'Space Mono',monospace;font-size:.62rem;color:var(--fog);width:15px;text-align:center;flex-shrink:0}
+.sbtn{width:34px;height:34px;border-radius:7px;border:1.5px solid var(--mist);background:var(--cloud);cursor:pointer;font-family:'Space Mono',monospace;font-size:.62rem;color:var(--ink);transition:all .15s;display:flex;align-items:center;justify-content:center;font-weight:700;user-select:none}
+.sbtn:hover:not(.tk):not(.ag){border-color:var(--teal);color:var(--teal);transform:scale(1.08)}
+.sbtn.sel{background:var(--night);border-color:var(--night);color:var(--teal)}
+.sbtn.tk{background:var(--mist);color:var(--fog);cursor:not-allowed;opacity:.5}
+.sbtn.ag{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.sleg{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.sli{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--fog)}
+.sld{width:13px;height:13px;border-radius:3px;border:1.5px solid var(--mist)}
+.sld.av{background:var(--cloud)}.sld.sel{background:var(--night);border-color:var(--night)}.sld.tk{background:var(--mist);opacity:.5}
+
+/* FORM */
+.fsec{margin-bottom:18px}
+.fst{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.84rem;color:var(--night);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fgrid.one{grid-template-columns:1fr}
+.ff{display:flex;flex-direction:column;gap:4px}
+.ff label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fog);font-weight:700}
+.ff input,.ff select{padding:10px 12px;border:1.5px solid var(--mist);border-radius:8px;font-family:'Inter',sans-serif;font-size:.88rem;color:var(--ink);background:var(--cloud);outline:none;transition:border-color .2s,background .2s}
+.ff input:focus,.ff select:focus{border-color:var(--teal);background:#fff}
+
+/* PAYMENT */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+.pcard{border:1.5px solid var(--mist);border-radius:11px;padding:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:9px;font-size:.84rem;font-weight:600;color:var(--ink)}
+.pcard:hover{border-color:var(--teal)}
+.pcard.on{border-color:var(--night);background:#F0F9FF;color:var(--night)}
+
+/* ORDER SUMMARY */
+.osum{background:var(--cloud);border-radius:11px;padding:14px;margin-bottom:18px}
+.ostl{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.82rem;color:var(--night);margin-bottom:10px}
+.osrow{display:flex;justify-content:space-between;align-items:center;font-size:.83rem;color:var(--fog);margin-bottom:7px}
+.osrow:last-child{margin-bottom:0}
+.osrow.tot{border-top:1px solid var(--mist);padding-top:9px;margin-top:7px;font-weight:700;color:var(--night);font-size:.95rem;font-family:'Space Grotesk',sans-serif}
+.osrow strong{color:var(--ink)}
+
+/* MODAL FOOTER */
+.mftr{padding:14px 22px;border-top:1px solid var(--mist);display:flex;gap:9px;justify-content:flex-end;background:#fff;position:sticky;bottom:0}
+.mbk{padding:10px 18px;border:1.5px solid var(--mist);border-radius:9px;background:transparent;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.85rem;color:var(--fog);cursor:pointer;transition:all .2s}
+.mbk:hover{border-color:var(--ink);color:var(--ink)}
+.mfwd{padding:10px 22px;border:none;border-radius:9px;background:var(--night);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.85rem;color:var(--teal);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.mfwd:hover{background:var(--deep)}
+.mfwd.cta{background:var(--teal);color:var(--night)}
+.mfwd.cta:hover{background:var(--teal2)}
+
+/* SUCCESS */
+.swrap{text-align:center;padding:28px 0 14px}
+.sring{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#00857A);display:flex;align-items:center;justify-content:center;font-size:1.9rem;margin:0 auto 18px;box-shadow:0 0 0 12px rgba(0,201,167,.12)}
+.sttl{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--night);margin-bottom:7px}
+.ssub{color:var(--fog);font-size:.88rem;margin-bottom:26px}
+
+/* E-TICKET */
+.et{background:var(--night);border-radius:15px;overflow:hidden;margin-bottom:22px}
+.et-top{padding:18px 22px}
+.et-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.et-logo{font-family:'Space Grotesk',sans-serif;font-size:.88rem;font-weight:700;color:var(--teal)}
+.et-id{font-family:'Space Mono',monospace;font-size:.68rem;color:rgba(255,255,255,.35);background:rgba(255,255,255,.07);padding:3px 9px;border-radius:5px}
+.et-route{display:flex;align-items:center;gap:11px;margin-bottom:18px}
+.et-city{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:#fff}
+.et-arrow{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.et-aline{width:100%;height:1px;background:linear-gradient(90deg,var(--teal),rgba(245,230,200,.4))}
+.et-albl{font-family:'Space Mono',monospace;font-size:.58rem;color:rgba(255,255,255,.3)}
+.et-info{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.et-ii label{display:block;font-family:'Space Mono',monospace;font-size:.58rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
+.et-ii span{font-family:'Space Grotesk',sans-serif;font-size:.88rem;font-weight:600;color:#fff}
+.et-tear{border-top:2px dashed rgba(255,255,255,.08);display:flex;align-items:center;padding:13px 22px;gap:14px}
+.et-qr{width:52px;height:52px;background:#fff;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0}
+.et-note{font-size:.73rem;color:rgba(255,255,255,.3);line-height:1.5}
+.et-note strong{display:block;color:rgba(255,255,255,.65);margin-bottom:2px}
+.sacts{display:flex;gap:9px;justify-content:center}
+
+/* BOOKINGS */
+.bcard{background:#fff;border-radius:13px;overflow:hidden;margin-bottom:11px;border:1.5px solid var(--mist)}
+.bcard-hdr{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--mist)}
+.brtxt{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.97rem;color:var(--night)}
+.bsub{font-size:.78rem;color:var(--fog);margin-top:2px}
+.stag{font-family:'Space Mono',monospace;font-size:.66rem;font-weight:700;padding:4px 10px;border-radius:6px;text-transform:uppercase;letter-spacing:.05em}
+.stag.cf{background:#ECFDF5;color:#065F46}.stag.ca{background:#FFF1F2;color:#9F1239}
+.bcard-bod{padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.bmeta{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--fog)}
+.bmeta span strong{color:var(--ink);font-weight:600}
+.bcanbtn{padding:6px 13px;border:1.5px solid var(--mist);border-radius:7px;background:transparent;font-size:.76rem;font-weight:600;color:var(--fog);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.bcanbtn:hover{border-color:var(--red);color:var(--red)}
+
+/* AUTH */
+.atabs{display:flex;border-bottom:1.5px solid var(--mist);margin-bottom:22px}
+.atab{flex:1;padding:11px 0;text-align:center;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.88rem;color:var(--fog);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1.5px;transition:all .2s}
+.atab.on{color:var(--night);border-bottom-color:var(--teal)}
+
+/* TOAST */
+.tstack{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:var(--night);color:#fff;padding:11px 18px;border-radius:11px;font-size:.84rem;font-weight:500;display:flex;align-items:center;gap:7px;box-shadow:0 8px 32px rgba(0,0,0,.25);border-left:3px solid var(--teal);animation:ti .3s ease,to .3s ease 2.7s forwards;white-space:nowrap}
+@keyframes ti{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes to{from{opacity:1}to{opacity:0}}
+.hidden{display:none!important}
+@media(max-width:580px){
+  .rc-top{grid-template-columns:44px 1fr}
+  .rc-right{grid-column:span 2;display:flex;align-items:center;justify-content:space-between}
+  .fgrid{grid-template-columns:1fr}
+  .et-info{grid-template-columns:1fr 1fr}
+  .trust{gap:16px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="logo-mark">🚉</div>Transit<span>Go</span></div>
+  <div class="nav-r">
+    <button class="navbtn" id="nb-search" onclick="showView('search')">Search</button>
+    <button class="navbtn" id="nb-book" onclick="showView('bookings')">My Bookings</button>
+    <button class="pill" id="nb-auth" onclick="openAuth()">Sign In</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-in">
+    <div class="eyebrow">Departing now</div>
+    <div class="flap-board">
+      <div class="flap-word" id="fw"></div>
+      <div class="flap-sep">→</div>
+      <div class="flap-word" id="ft"></div>
+    </div>
+    <p class="hero-sub">500+ routes across India. Book bus &amp; train tickets in under a minute.</p>
+    <div class="search-card">
+      <div class="mode-tabs">
+        <button class="mtab on" id="tb-bus" onclick="setMode('bus')">🚌 Bus</button>
+        <button class="mtab" id="tb-train" onclick="setMode('train')">🚆 Train</button>
+      </div>
+      <div class="sf">
+        <div class="fg"><label class="fl">From</label><input list="cl" class="fi" id="i-from" placeholder="Mumbai" value="Mumbai"><datalist id="cl"><option>Mumbai</option><option>Delhi</option><option>Bengaluru</option><option>Pune</option><option>Chennai</option><option>Kolkata</option><option>Hyderabad</option><option>Ahmedabad</option><option>Jaipur</option><option>Nagpur</option></datalist></div>
+        <div class="fg"><label class="fl">To</label><input list="cl" class="fi" id="i-to" placeholder="Pune" value="Pune"></div>
+        <div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="i-date"></div>
+        <button class="srch" onclick="doSearch()"><span>Search</span><span>→</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="ti"><span>⚡</span><span>Instant confirmation</span></div>
+  <div class="ti"><span>🔒</span><span><strong>SSL</strong> secured payments</span></div>
+  <div class="ti"><span>📱</span><span>E-ticket on your phone</span></div>
+  <div class="ti"><span>↩️</span><span>Free cancellation*</span></div>
+</div>
+
+<div class="main">
+  <div id="v-results" class="hidden">
+    <div id="v-loading"><div class="lbar"><div class="lbar-f"></div></div></div>
+    <div id="v-rlist" class="hidden">
+      <div class="sec-hdr">
+        <div class="sec-ttl"><span id="r-lbl">Results</span><span class="cbadge" id="r-cnt">0</span></div>
+        <div style="font-size:.78rem;color:var(--fog)" id="r-date"></div>
+      </div>
+      <div class="frow">
+        <button class="chip on" data-f="all" onclick="applyF(this)">All</button>
+        <button class="chip" data-f="morning" onclick="applyF(this)">🌅 Morning</button>
+        <button class="chip" data-f="evening" onclick="applyF(this)">🌆 Evening</button>
+        <button class="chip" data-f="ac" onclick="applyF(this)">❄️ AC</button>
+        <button class="chip" data-f="sleeper" onclick="applyF(this)">🛏 Sleeper</button>
+        <button class="chip" data-f="cheap" onclick="applyF(this)">₹ Lowest fare</button>
+      </div>
+      <div id="r-list"></div>
+    </div>
+  </div>
+  <div id="v-bookings" class="hidden">
+    <div class="sec-hdr"><div class="sec-ttl">My Bookings</div></div>
+    <div id="b-list"></div>
+  </div>
+</div>
+
+<div class="tstack" id="tstack"></div>
+
+<!-- BOOKING MODAL -->
+<div class="backdrop" id="bm">
+  <div class="mpanel">
+    <div class="mhandle"></div>
+    <div class="mhdr"><div class="mttl" id="bm-ttl">Book Ticket</div><button class="mclose" onclick="closeM('bm')">✕</button></div>
+    <div class="mbody">
+      <div class="steps">
+        <div class="sdot on" id="sd1">1</div><div class="sline" id="sl1"></div>
+        <div class="sdot" id="sd2">2</div><div class="sline" id="sl2"></div>
+        <div class="sdot" id="sd3">3</div><div class="sline" id="sl3"></div>
+        <div class="sdot" id="sd4">✓</div>
+      </div>
+      <!-- Step 1: Seats -->
+      <div id="bs1">
+        <p style="font-size:.83rem;color:var(--fog);margin-bottom:14px">Tap any available cell to choose your seat.</p>
+        <div class="sleg">
+          <div class="sli"><div class="sld av"></div> Available</div>
+          <div class="sli"><div class="sld sel"></div> Selected</div>
+          <div class="sli"><div class="sld tk"></div> Taken</div>
+        </div>
+        <div class="slg" id="coach-lbl">Coach B3</div>
+        <div class="sgrid" id="sgrid"></div>
+        <p id="seat-info" style="font-size:.83rem;color:var(--teal2);font-weight:600;min-height:18px"></p>
+      </div>
+      <!-- Step 2: Passenger -->
+      <div id="bs2" class="hidden">
+        <div class="fsec">
+          <div class="fst">👤 Passenger details</div>
+          <div class="fgrid" style="margin-bottom:10px">
+            <div class="ff"><label>First Name</label><input type="text" id="f-fn" placeholder="Rahul"></div>
+            <div class="ff"><label>Last Name</label><input type="text" id="f-ln" placeholder="Sharma"></div>
+            <div class="ff"><label>Age</label><input type="number" id="f-age" placeholder="28" min="1" max="120"></div>
+            <div class="ff"><label>Gender</label><select id="f-gen"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+          </div>
+        </div>
+        <div class="fsec">
+          <div class="fst">📞 Contact</div>
+          <div class="fgrid">
+            <div class="ff"><label>Mobile</label><input type="tel" id="f-mob" placeholder="+91 98765 43210"></div>
+            <div class="ff"><label>Email</label><input type="email" id="f-em" placeholder="you@email.com"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Step 3: Payment -->
+      <div id="bs3" class="hidden">
+        <div class="osum" id="osum"></div>
+        <div class="fst" style="margin-bottom:10px">💳 Pay via</div>
+        <div class="pgrid">
+          <div class="pcard on" data-m="UPI" onclick="pickPay(this)"><span>📱</span> UPI</div>
+          <div class="pcard" data-m="Card" onclick="pickPay(this)"><span>💳</span> Debit / Credit</div>
+          <div class="pcard" data-m="Net" onclick="pickPay(this)"><span>🏦</span> Net Banking</div>
+          <div class="pcard" data-m="Wallet" onclick="pickPay(this)"><span>👛</span> Wallet</div>
+        </div>
+        <div id="pd-upi"><div class="ff"><label>UPI ID</label><input type="text" placeholder="name@upi"></div></div>
+        <div id="pd-card" class="hidden">
+          <div class="fgrid" style="margin-bottom:10px">
+            <div class="ff"><label>Card Number</label><input type="text" placeholder="•••• •••• •••• ••••"></div>
+            <div class="ff"><label>Name on Card</label><input type="text" placeholder="Rahul Sharma"></div>
+          </div>
+          <div class="fgrid">
+            <div class="ff"><label>Expiry</label><input type="text" placeholder="MM / YY"></div>
+            <div class="ff"><label>CVV</label><input type="password" placeholder="•••"></div>
+          </div>
+        </div>
+        <div id="pd-other" class="hidden">
+          <div class="ff"><label>Bank / Wallet</label><select><option>SBI Net Banking</option><option>HDFC</option><option>ICICI</option><option>Paytm Wallet</option><option>PhonePe</option></select></div>
+        </div>
+      </div>
+      <!-- Step 4: Success -->
+      <div id="bs4" class="hidden">
+        <div class="swrap">
+          <div class="sring">✓</div>
+          <div class="sttl">Booking Confirmed!</div>
+          <p class="ssub">Your e-ticket is ready. We've sent a copy to your email.</p>
+          <div class="et" id="etkt"></div>
+          <div class="sacts">
+            <button class="mfwd cta" onclick="dlTicket()">📄 Download Ticket</button>
+            <button class="mbk" onclick="closeM('bm');showView('bookings')">View Bookings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mftr" id="bm-ftr">
+      <button class="mbk hidden" id="bm-bk" onclick="bmBack()">← Back</button>
+      <button class="mfwd" id="bm-nx" onclick="bmNext()">Select Seat →</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="backdrop" id="am">
+  <div class="mpanel" style="max-width:420px">
+    <div class="mhandle"></div>
+    <div class="mhdr"><div class="mttl">Welcome to TransitGo</div><button class="mclose" onclick="closeM('am')">✕</button></div>
+    <div class="mbody">
+      <div class="atabs">
+        <div class="atab on" id="at-li" onclick="switchAt('login')">Sign In</div>
+        <div class="atab" id="at-re" onclick="switchAt('reg')">Register</div>
+      </div>
+      <div id="af-login">
+        <div class="fgrid one" style="margin-bottom:11px"><div class="ff"><label>Email</label><input type="email" id="a-em" placeholder="you@email.com"></div></div>
+        <div class="fgrid one" style="margin-bottom:18px"><div class="ff"><label>Password</label><input type="password" id="a-pw" placeholder="••••••••"></div></div>
+        <button class="mfwd cta" style="width:100%;justify-content:center;padding:13px" onclick="doLogin()">Sign In</button>
+        <p style="text-align:center;font-size:.78rem;color:var(--fog);margin-top:12px;cursor:pointer" onclick="toast('OTP sent to your email!','📱')">Forgot password?</p>
+      </div>
+      <div id="af-reg" class="hidden">
+        <div class="fgrid" style="margin-bottom:11px">
+          <div class="ff"><label>First Name</label><input type="text" id="r-fn" placeholder="Rahul"></div>
+          <div class="ff"><label>Last Name</label><input type="text" id="r-ln" placeholder="Sharma"></div>
+        </div>
+        <div class="fgrid one" style="margin-bottom:11px"><div class="ff"><label>Email</label><input type="email" id="r-em" placeholder="you@email.com"></div></div>
+        <div class="fgrid" style="margin-bottom:18px">
+          <div class="ff"><label>Mobile</label><input type="tel" id="r-mob" placeholder="+91 ···"></div>
+          <div class="ff"><label>Password</label><input type="password" id="r-pw" placeholder="••••••••"></div>
+        </div>
+        <button class="mfwd cta" style="width:100%;justify-content:center;padding:13px" onclick="doReg()">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SVCS={
+  bus:[
+    {id:'B1',name:'Shivneri AC Sleeper',op:'MSRTC',type:'AC Sleeper',dep:'06:00',arr:'09:30',dur:'3h 30m',fare:680,total:40,booked:22,rating:4.6,amen:['WiFi','Charging','Blanket']},
+    {id:'B2',name:'Neeta Volvo Express',op:'Neeta Tours',type:'Non-AC Seater',dep:'08:00',arr:'12:15',dur:'4h 15m',fare:320,total:40,booked:8,rating:4.2,amen:['Water','Snacks']},
+    {id:'B3',name:'VRL Travels Gold',op:'VRL',type:'AC Seater',dep:'14:00',arr:'17:30',dur:'3h 30m',fare:490,total:36,booked:29,rating:4.4,amen:['WiFi','Charging']},
+    {id:'B4',name:'Paulo Night Rider',op:'Paulo Travels',type:'Sleeper',dep:'22:15',arr:'02:45',dur:'4h 30m',fare:820,total:30,booked:21,rating:4.7,amen:['Blanket','Pillow']},
+  ],
+  train:[
+    {id:'T1',name:'Deccan Queen',op:'Indian Railways',type:'Express · SL',dep:'07:15',arr:'11:05',dur:'3h 50m',fare:385,total:72,booked:40,rating:4.8,amen:['Pantry','AC Coach']},
+    {id:'T2',name:'Intercity Express',op:'Indian Railways',type:'Express · 3A',dep:'10:55',arr:'15:10',dur:'4h 15m',fare:795,total:60,booked:11,rating:4.5,amen:['Catering','Bedroll']},
+    {id:'T3',name:'Sahyadri Express',op:'Indian Railways',type:'Superfast · 2A',dep:'18:00',arr:'22:05',dur:'4h 05m',fare:1180,total:48,booked:39,rating:4.3,amen:['Catering','Priority boarding']},
+    {id:'T4',name:'Duronto Express',op:'Indian Railways',type:'Rajdhani Class',dep:'23:50',arr:'03:55',dur:'4h 05m',fare:1680,total:48,booked:6,rating:4.9,amen:['Dinner','Full bedding']},
+  ]
+};
+
+const DESTS=[['MUMBAI','PUNE'],['DELHI','JAIPUR'],['BENGALURU','CHENNAI'],['KOLKATA','PATNA'],['HYDERABAD','NAGPUR']];
+let fi=0;
+let S={mode:'bus',from:'Mumbai',to:'Pune',date:'',filter:'all',step:1,svc:null,seat:null,pay:'UPI',loggedIn:false,user:null,bookings:[],pending:null};
+
+// FLAP
+function renderFlap(from,to){
+  document.getElementById('fw').innerHTML=from.split('').map(c=>`<div class="flap-char">${c}</div>`).join('');
+  document.getElementById('ft').innerHTML=to.split('').map(c=>`<div class="flap-char">${c}</div>`).join('');
+}
+function animFlap(from,to){
+  ['fw','ft'].forEach((id,idx)=>{
+    const word=idx===0?from:to;
+    const els=document.getElementById(id).querySelectorAll('.flap-char');
+    if(els.length!==word.length){
+      document.getElementById(id).innerHTML=word.split('').map(c=>`<div class="flap-char">${c}</div>`).join('');
+      return;
+    }
+    word.split('').forEach((ch,i)=>{
+      setTimeout(()=>{
+        els[i]&&els[i].classList.add('flip');
+        setTimeout(()=>{if(els[i]){els[i].textContent=ch;els[i].classList.remove('flip');}},100);
+      },i*60);
+    });
+  });
+}
+function initFlap(){
+  renderFlap(DESTS[0][0],DESTS[0][1]);
+  setInterval(()=>{fi=(fi+1)%DESTS.length;animFlap(DESTS[fi][0],DESTS[fi][1]);},2800);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const t=new Date().toISOString().split('T')[0];
+  document.getElementById('i-date').value=t;
+  document.getElementById('i-date').min=t;
+  S.date=t;
+  initFlap();
+});
+
+function setMode(m){
+  S.mode=m;
+  document.getElementById('tb-bus').className='mtab'+(m==='bus'?' on':'');
+  document.getElementById('tb-train').className='mtab'+(m==='train'?' on':'');
+}
+
+function doSearch(){
+  const from=document.getElementById('i-from').value.trim();
+  const to=document.getElementById('i-to').value.trim();
+  const date=document.getElementById('i-date').value;
+  if(!from||!to){toast('Enter origin and destination','⚠️');return;}
+  if(from.toLowerCase()===to.toLowerCase()){toast('Origin and destination must differ','⚠️');return;}
+  S.from=from;S.to=to;S.date=date;
+  showView('results');
+  document.getElementById('v-loading').classList.remove('hidden');
+  document.getElementById('v-rlist').classList.add('hidden');
+  window.scrollTo({top:document.querySelector('.main').offsetTop-16,behavior:'smooth'});
+  setTimeout(()=>{
+    document.getElementById('v-loading').classList.add('hidden');
+    document.getElementById('v-rlist').classList.remove('hidden');
+    renderResults();
+  },750);
+}
+
+function renderResults(){
+  const svcs=SVCS[S.mode];
+  const ico=S.mode==='bus'?'🚌':'🚆';
+  const dl=S.date?new Date(S.date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'}):'';
+  let filtered=[...svcs];
+  if(S.filter==='morning')filtered=filtered.filter(s=>parseInt(s.dep)<12);
+  if(S.filter==='evening')filtered=filtered.filter(s=>parseInt(s.dep)>=12);
+  if(S.filter==='ac')filtered=filtered.filter(s=>s.type.toLowerCase().includes('ac')||s.type.includes('2A')||s.type.includes('3A'));
+  if(S.filter==='sleeper')filtered=filtered.filter(s=>s.type.toLowerCase().includes('sl')||s.type.toLowerCase().includes('sleeper'));
+  if(S.filter==='cheap')filtered=[...filtered].sort((a,b)=>a.fare-b.fare);
+  document.getElementById('r-lbl').textContent=S.from+' → '+S.to;
+  document.getElementById('r-cnt').textContent=filtered.length;
+  document.getElementById('r-date').textContent=dl;
+  const el=document.getElementById('r-list');
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="ei">🔍</div><h3>No trips match your filters</h3><p>Try removing a filter or changing the date.</p></div>';return;}
+  el.innerHTML=filtered.map(s=>{
+    const av=s.total-s.booked;
+    const sc=av<=5?'l':av<=12?'f':'p';
+    const st=av<=5?'⚡ '+av+' left!':av<=12?av+' available':av+' seats open';
+    return`<div class="rc">
+      <div class="rc-top">
+        <div class="mico ${S.mode}">${ico}</div>
+        <div class="rc-mid">
+          <div class="sname">${s.name}</div>
+          <div class="stype">${s.op} · ${s.type}</div>
+          <div class="rv">
+            <div><div class="ctag">${S.from.substring(0,3).toUpperCase()}</div><div class="ttag">${s.dep}</div></div>
+            <div class="rl"><div class="rt"></div><div class="rdur">${s.dur}</div></div>
+            <div><div class="ctag">${S.to.substring(0,3).toUpperCase()}</div><div class="ttag">${s.arr}</div></div>
+          </div>
+        </div>
+        <div class="rc-right">
+          <div class="price"><span class="cur">₹</span>${s.fare}</div>
+          <div class="plbl">per person</div>
+          <button class="bbtn" onclick="openBooking('${s.id}')">Book →</button>
+        </div>
+      </div>
+      <div class="rc-bot">
+        <div class="cmeta">
+          <div class="mi">⭐ <strong>${s.rating}</strong></div>
+          <div class="mi">🪑 <strong>${s.total}</strong> seats</div>
+          ${s.amen.map(a=>`<div class="mi">✓ ${a}</div>`).join('')}
+        </div>
+        <span class="slbl ${sc}">${st}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function applyF(btn){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  S.filter=btn.dataset.f;
+  renderResults();
+}
+
+function openBooking(id){
+  if(!S.loggedIn){S.pending=id;openAuth();return;}
+  const svc=[...SVCS.bus,...SVCS.train].find(s=>s.id===id);
+  if(!svc)return;
+  S.svc=svc;S.seat=null;S.step=1;
+  document.getElementById('bm-ttl').textContent='Book · '+svc.name;
+  buildSeats(svc);
+  goStep(1);
+  openM('bm');
+}
+
+function buildSeats(svc){
+  const taken=rndTaken(svc.total,svc.booked);
+  const rows=Math.ceil(svc.total/4);
+  const labs=['A','B','','C','D'];
+  const grid=document.getElementById('sgrid');
+  grid.innerHTML='';
+  document.getElementById('coach-lbl').textContent=svc.id.startsWith('T')?'Coach B3':'Coach A';
+  for(let r=0;r<rows;r++){
+    const row=document.createElement('div');row.className='srow';
+    const rl=document.createElement('div');rl.className='srlab';rl.textContent=r+1;row.appendChild(rl);
+    labs.forEach((lb,ci)=>{
+      if(lb===''){const g=document.createElement('div');g.className='sbtn ag';row.appendChild(g);return;}
+      const n=r*4+(ci>2?ci-1:ci)+1;
+      if(n>svc.total)return;
+      const sid=`${r+1}${lb}`;
+      const btn=document.createElement('div');
+      btn.className='sbtn'+(taken.has(n)?' tk':'');
+      btn.textContent=sid;
+      if(!taken.has(n))btn.onclick=()=>pickSeat(btn,sid);
+      row.appendChild(btn);
+    });
+    grid.appendChild(row);
+  }
+}
+
+function rndTaken(tot,cnt){
+  const s=new Set();
+  while(s.size<cnt)s.add(Math.floor(Math.random()*tot)+1);
+  return s;
+}
+
+function pickSeat(btn,sid){
+  document.querySelectorAll('.sbtn.sel').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');S.seat=sid;
+  document.getElementById('seat-info').textContent='Seat '+sid+' selected ✓';
+  document.getElementById('bm-nx').textContent='Passenger Details →';
+}
+
+function calcTotal(){
+  if(!S.svc)return 0;
+  return S.svc.fare+Math.round(S.svc.fare*.05)+29;
+}
+
+function buildOSum(){
+  const s=S.svc;const tax=Math.round(s.fare*.05);const tot=s.fare+tax+29;
+  document.getElementById('osum').innerHTML=`<div class="ostl">Order Summary</div>
+    <div class="osrow"><span>${s.name} · Seat ${S.seat}</span><strong>₹${s.fare}</strong></div>
+    <div class="osrow"><span>GST (5%)</span><strong>₹${tax}</strong></div>
+    <div class="osrow"><span>Convenience fee</span><strong>₹29</strong></div>
+    <div class="osrow tot"><span>Total payable</span><span>₹${tot}</span></div>`;
+}
+
+function pickPay(el){
+  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');S.pay=el.dataset.m;
+  document.getElementById('pd-upi').classList.toggle('hidden',S.pay!=='UPI');
+  document.getElementById('pd-card').classList.toggle('hidden',S.pay!=='Card');
+  document.getElementById('pd-other').classList.toggle('hidden',S.pay==='UPI'||S.pay==='Card');
+}
+
+function goStep(n){
+  S.step=n;
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('bs'+i).classList.toggle('hidden',i!==n);
+    const d=document.getElementById('sd'+i);
+    d.className='sdot'+(i<n?' done':i===n?' on':'');
+  });
+  [1,2,3].forEach(i=>document.getElementById('sl'+i).className='sline'+(i<n?' done':''));
+  const ftr=document.getElementById('bm-ftr');
+  const bk=document.getElementById('bm-bk');
+  const nx=document.getElementById('bm-nx');
+  if(n===4){ftr.style.display='none';return;}
+  ftr.style.display='flex';
+  bk.classList.toggle('hidden',n===1);
+  const lbls=['','Select Seat →','Passenger Details →','Pay ₹'+calcTotal()+' →'];
+  nx.textContent=lbls[n]||'Continue →';
+  nx.className='mfwd'+(n===3?' cta':'');
+}
+
+function bmNext(){
+  if(S.step===1){
+    if(!S.seat){toast('Please select a seat first','⚠️');return;}
+    goStep(2);
+  }else if(S.step===2){
+    const fn=document.getElementById('f-fn').value.trim();
+    const ln=document.getElementById('f-ln').value.trim();
+    const mob=document.getElementById('f-mob').value.trim();
+    if(!fn||!ln||!mob){toast('Fill in all required fields','⚠️');return;}
+    buildOSum();goStep(3);
+  }else if(S.step===3){
+    procBooking();
+  }
+}
+function bmBack(){if(S.step>1)goStep(S.step-1);}
+
+function procBooking(){
+  const s=S.svc;
+  const pname=document.getElementById('f-fn').value+' '+document.getElementById('f-ln').value;
+  const bid='TG'+Date.now().toString().slice(-7);
+  const df=S.date?new Date(S.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'Today';
+  const tot=calcTotal();
+  const bk={id:bid,svc:s,seat:S.seat,passenger:pname,from:S.from,to:S.to,date:S.date,df,pay:S.pay,total:tot,status:'confirmed',mode:S.mode};
+  S.bookings.unshift(bk);
+  document.getElementById('etkt').innerHTML=buildEt(bk);
+  goStep(4);toast('Booking confirmed! 🎉','✓');
+}
+
+function buildEt(b){
+  return`<div class="et-top">
+    <div class="et-hdr"><div class="et-logo">TransitGo</div><div class="et-id">#${b.id}</div></div>
+    <div class="et-route">
+      <div class="et-city">${b.from.substring(0,3).toUpperCase()}</div>
+      <div class="et-arrow"><div class="et-aline"></div><div class="et-albl">${b.svc.dur}</div></div>
+      <div class="et-city">${b.to.substring(0,3).toUpperCase()}</div>
+    </div>
+    <div class="et-info">
+      <div class="et-ii"><label>Passenger</label><span>${b.passenger}</span></div>
+      <div class="et-ii"><label>Date</label><span>${b.df}</span></div>
+      <div class="et-ii"><label>Departure</label><span>${b.svc.dep}</span></div>
+      <div class="et-ii"><label>Seat</label><span>${b.seat}</span></div>
+      <div class="et-ii"><label>Class</label><span>${b.svc.type}</span></div>
+      <div class="et-ii"><label>Total Paid</label><span>₹${b.total}</span></div>
+    </div>
+  </div>
+  <div class="et-tear">
+    <div class="et-qr">▦</div>
+    <div class="et-note"><strong>Scan at boarding gate</strong>Show this QR to the conductor. Valid for one journey only.</div>
+  </div>`;
+}
+function dlTicket(){toast('Ticket PDF downloaded','📄');}
+
+function renderBookings(){
+  const el=document.getElementById('b-list');
+  if(!S.bookings.length){el.innerHTML='<div class="empty"><div class="ei">🎫</div><h3>No bookings yet</h3><p>Search for a trip and book your first ticket.</p></div>';return;}
+  el.innerHTML=S.bookings.map(b=>`<div class="bcard">
+    <div class="bcard-hdr">
+      <div><div class="brtxt">${b.from} → ${b.to}</div><div class="bsub">${b.svc.name} · ${b.df}</div></div>
+      <span class="stag ${b.status==='confirmed'?'cf':'ca'}">${b.status}</span>
+    </div>
+    <div class="bcard-bod">
+      <div class="bmeta">
+        <span>Seat <strong>${b.seat}</strong></span>
+        <span>Dep <strong>${b.svc.dep}</strong></span>
+        <span>₹<strong>${b.total}</strong></span>
+        <span>PNR <strong>${b.id}</strong></span>
+      </div>
+      ${b.status==='confirmed'?`<button class="bcanbtn" onclick="canBook('${b.id}')">Cancel</button>`:''}
+    </div>
+  </div>`).join('');
+}
+
+function canBook(id){
+  const b=S.bookings.find(x=>x.id===id);
+  if(b){b.status='cancelled';renderBookings();toast('Booking cancelled. Refund in 5–7 working days.','↩️');}
+}
+
+function openAuth(){openM('am');}
+function switchAt(tab){
+  document.getElementById('at-li').className='atab'+(tab==='login'?' on':'');
+  document.getElementById('at-re').className='atab'+(tab==='reg'?' on':'');
+  document.getElementById('af-login').classList.toggle('hidden',tab!=='login');
+  document.getElementById('af-reg').classList.toggle('hidden',tab!=='reg');
+}
+function doLogin(){
+  const em=document.getElementById('a-em').value.trim();
+  const pw=document.getElementById('a-pw').value;
+  if(!em||!pw){toast('Enter email and password','⚠️');return;}
+  S.loggedIn=true;S.user={name:em.split('@')[0],email:em};
+  document.getElementById('nb-auth').textContent='👤 '+S.user.name;
+  document.getElementById('nb-auth').onclick=()=>{};
+  closeM('am');toast('Welcome back, '+S.user.name+'!','👋');
+  if(S.pending){const p=S.pending;S.pending=null;setTimeout(()=>openBooking(p),350);}
+}
+function doReg(){
+  const fn=document.getElementById('r-fn').value.trim();
+  const em=document.getElementById('r-em').value.trim();
+  const pw=document.getElementById('r-pw').value;
+  if(!fn||!em||!pw){toast('Fill in all required fields','⚠️');return;}
+  S.loggedIn=true;S.user={name:fn,email:em};
+  document.getElementById('nb-auth').textContent='👤 '+fn;
+  document.getElementById('nb-auth').onclick=()=>{};
+  closeM('am');toast('Account created! Welcome, '+fn+' 🎉','✓');
+  if(S.pending){const p=S.pending;S.pending=null;setTimeout(()=>openBooking(p),350);}
+}
+
+function showView(v){
+  ['v-results','v-bookings'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['nb-search','nb-book'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  if(v==='results'){
+    document.getElementById('v-results').classList.remove('hidden');
+    document.getElementById('nb-search').classList.add('on');
+  }else if(v==='bookings'){
+    if(!S.loggedIn){openAuth();return;}
+    document.getElementById('v-bookings').classList.remove('hidden');
+    document.getElementById('nb-book').classList.add('on');
+    renderBookings();
+    window.scrollTo({top:document.querySelector('.main').offsetTop-16,behavior:'smooth'});
+  }else{window.scrollTo({top:0,behavior:'smooth'});}
+}
+
+function openM(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeM(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+document.querySelectorAll('.backdrop').forEach(bd=>{bd.addEventListener('click',e=>{if(e.target===bd)closeM(bd.id);});});
+
+function toast(msg,ico='✓'){
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML=`<span>${ico}</span><span>${msg}</span>`;
+  document.getElementById('tstack').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+</script>
+</body>
+</html>
