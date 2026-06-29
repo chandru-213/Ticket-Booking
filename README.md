@@ -2,12 +2,14 @@
 
 A fully functional, single-file web application for booking bus and train tickets online. Built from the Software Requirements Specification (SRS) document.
 
+Developed by Chandru S.
+This project is devoled for my Acadamic Mini Project
 ---
 
 ## 📁 Project Structure
 
 ```
-ticket-booking.html   ← Complete single-file web app (HTML + CSS + JS)
+index.html   ← Complete single-file web app (HTML + CSS + JS)
 README.md             ← This file
 ```
 
